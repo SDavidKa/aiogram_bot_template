@@ -1,0 +1,5 @@
+Для обновление таблиц в БД:
+1. Создание миграции:
+    alembic revision --autogenerate -m 'init revision'
+2. Загружаем данные в БД:
+    alembic upgrade head
