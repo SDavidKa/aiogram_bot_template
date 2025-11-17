@@ -1,0 +1,15 @@
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8100:8100"
+    env_file:
+      - .env
+    environment:
+      - PYTHONIOENCODING=utf-8
+      - LANG=ru_RU.UTF-8
+    volumes:
+      - ./bot.log:/app/bot.log
+    restart: unless-stopped
