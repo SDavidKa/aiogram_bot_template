@@ -9,16 +9,11 @@ async def safe_api_call(coro):
     coro — это корутина (await client.get(...))
     """
     try:
-        response = await coro
-        response.raise_for_status()
+        response: httpx.Response = await coro
         return response
-    except httpx.HTTPStatusError as e:
-        logger.error(
-            f"API request failed: {e}",
-            status_code=e.response.status_code,
-            error=str(e)
-        )
-        raise
+    except (httpx.ConnectError, httpx.ReadTimeout, httpx.RemoteProtocolError) as e:
+        logger.error(f"API network error: {e}")
+        return None
     except Exception as e:
-        logger.exception(f"ANOTHER API request failed: {e}")
-        raise
+        logger.exception(f"Unexpected API error: {e}")
+        return None

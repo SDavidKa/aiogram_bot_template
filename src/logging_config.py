@@ -1,55 +1,46 @@
 import logging
-import structlog
 import sys
-import json
-from logging.handlers import RotatingFileHandler
-from src.config import LOG_LEVEL
+import structlog
+
+from src.config import LOG_LEVEL, LOG_FORMAT
 
 
-# Кастомный JSON-рендерер с поддержкой UTF-8
-class UTF8JSONRenderer(structlog.processors.JSONRenderer):
-    def __call__(self, logger, name, event_dict):
-        return json.dumps(event_dict, ensure_ascii=False)
-
-
-# Настройка стандартного логирования
 def configure_logging():
-    logger = logging.getLogger()
-    logger.setLevel(getattr(logging, LOG_LEVEL, "INFO"))
-
-    log_format = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    """
+    Настройка стандартного логирования так,
+    чтобы structlog и все сторонние библиотеки писали через единый формат.
+    """
+    logging.basicConfig(
+        format="%(message)s",
+        stream=sys.stdout,
+        level=getattr(logging, LOG_LEVEL, logging.INFO),
     )
 
-    console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setFormatter(log_format)
-    logger.addHandler(console_handler)
+    # Общие процессоры
+    shared_processors = [
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.add_logger_name,
+        structlog.processors.TimeStamper(fmt="iso", utc=True),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.dict_tracebacks,
+    ]
 
-    file_handler = RotatingFileHandler(
-        "bot.log", maxBytes=5_000_000, backupCount=5, encoding="utf-8"
-    )
-    file_handler.setFormatter(log_format)
-    logger.addHandler(file_handler)
+    if LOG_FORMAT == "json":
+        renderer = structlog.processors.JSONRenderer(
+            sort_keys=True,
+            ensure_ascii=False,
+            default=str,
+        )
+    else:
+        renderer = structlog.dev.ConsoleRenderer(colors=True)
 
-
-# Настройка structlog
-def configure_structlog():
     structlog.configure(
-        processors=[
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.stdlib.add_log_level,
-            structlog.stdlib.add_logger_name,
-            UTF8JSONRenderer(),
-        ],
-        context_class=dict,
-        logger_factory=structlog.stdlib.LoggerFactory(),
+        processors=shared_processors + [renderer],
         wrapper_class=structlog.stdlib.BoundLogger,
+        logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
     )
 
 
-# Инициализация логирования
 configure_logging()
-configure_structlog()
-
 logger = structlog.get_logger()

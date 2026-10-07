@@ -1,0 +1,11 @@
+[project]
+name = "aiogram-bot-template"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiogram>=3.31.0",
+    "httpx>=0.28.1",
+    "structlog>=26.1.0",
+]

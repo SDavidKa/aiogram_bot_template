@@ -5,18 +5,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import asyncio
 
-from aiogram import Dispatcher, Bot
-
-from config import bot
-from routers import router as main_router
 from src.logging_config import logger
 from src.api.client import client
+from src.app import create_dispatcher, create_bot
 
 
 async def main() -> None:
-    dp = Dispatcher()
-    dp.include_router(main_router)
-
+    dp = create_dispatcher()
+    bot = create_bot()
     try:
         await dp.start_polling(bot)
     except Exception as e:
